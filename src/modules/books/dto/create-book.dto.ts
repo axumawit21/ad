@@ -15,4 +15,7 @@ export class CreateBookDto {
   @IsString()
   @IsNotEmpty()
   fileUrl: string;
+
+  @IsString()
+  filePath?: string;
 }

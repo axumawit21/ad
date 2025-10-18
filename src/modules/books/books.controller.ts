@@ -1,9 +1,18 @@
-import { Controller, Post, Body, UploadedFile, UseInterceptors, Get, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UploadedFile,
+  UseInterceptors,
+  Get,
+  Query,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { extname } from 'path';
+
 
 @Controller('books')
 export class BooksController {
@@ -25,9 +34,24 @@ export class BooksController {
     @UploadedFile() file: Express.Multer.File,
     @Body() createBookDto: CreateBookDto,
   ) {
-    // Save the local file path as fileUrl
-    createBookDto.fileUrl = file.path; 
-    return this.booksService.create(createBookDto);
+    // ✅ Save relative path and public URL
+    const filePath = `uploads/${file.filename}`; // local path used by IngestService
+    const fileUrl = `http://localhost:3000/${filePath}`; // public URL to access the file
+
+    createBookDto.fileUrl = fileUrl;
+
+    // Optionally, you can also store the filePath if you want to process later
+    const savedBook = await this.booksService.create({
+      ...createBookDto,
+      filePath,
+    });
+
+    return {
+      message: 'File uploaded successfully!',
+      fileUrl,
+      filePath,
+      savedBook,
+    };
   }
 
   @Get()

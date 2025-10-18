@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Book, BookDocument } from './schemas/book.schema';
 import { CreateBookDto } from './dto/create-book.dto';
+const pdfParse = require('pdf-parse'); 
 
 @Injectable()
 export class BooksService {
