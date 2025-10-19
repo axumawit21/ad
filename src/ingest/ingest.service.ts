@@ -2,18 +2,24 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import * as fs from 'fs';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Book } from '../modules/books/schemas/book.schema'; // adjust path if needed
 
-// Import pdf-parse safely for both CommonJS and ESM cases
 const pdfParseImport = require('pdf-parse');
 const pdfParse = pdfParseImport.default || pdfParseImport;
 
 @Injectable()
 export class IngestService {
-  async processPDF(data: { filePath?: string; fileUrl?: string }) {
+  constructor(
+    @InjectModel(Book.name) private readonly bookModel: Model<Book>,
+  ) {}
+
+  async processPDF(data: { filePath?: string; fileUrl?: string; bookId: string }) {
     try {
       let pdfBuffer: Buffer;
 
-      // Handle both fileUrl (remote) and filePath (local)
+      // Fetch or read PDF
       if (data.fileUrl) {
         console.log('Fetching PDF from URL:', data.fileUrl);
         const response = await axios.get(data.fileUrl, { responseType: 'arraybuffer' });
@@ -28,22 +34,17 @@ export class IngestService {
         throw new Error('No filePath or fileUrl provided');
       }
 
-      // 🧩 Debug what pdfParse actually is
-      console.log('pdfParse import type:', typeof pdfParse);
-      console.log('pdfParse keys:', Object.keys(pdfParse || {}));
-
-      // 🧠 Safely call pdf-parse (works for both ESM and CJS)
+      // Parse text
       const parseFn = (pdfParse as any).default || pdfParse;
       const pdfData = await parseFn(pdfBuffer);
-
       const text = pdfData.text || '';
       console.log(`✅ PDF parsed successfully. Text length: ${text.length}`);
 
-      // Split text into chunks
+      // Split into chunks
       const chunks = this.chunkText(text, 500);
       console.log(`✅ Created ${chunks.length} chunks`);
 
-      // Generate embeddings for each chunk
+      // Generate embeddings
       const embeddings: Array<{ id: string; embedding: any; text: string }> = [];
       for (const chunk of chunks) {
         const embedding = await this.getEmbedding(chunk);
@@ -54,8 +55,15 @@ export class IngestService {
         });
       }
 
-      console.log(`✅ Generated ${embeddings.length} embeddings`);
-      return embeddings;
+      // ✅ Store in MongoDB
+      await this.bookModel.findByIdAndUpdate(
+        data.bookId,
+        { $set: { embeddings } },
+        { new: true },
+      );
+
+      console.log(`✅ Stored ${embeddings.length} embeddings in MongoDB`);
+      return { message: 'Embeddings generated and stored successfully', embeddingsCount: embeddings.length };
     } catch (error) {
       console.error('❌ Error processing PDF:', error);
       throw new InternalServerErrorException(

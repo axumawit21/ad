@@ -19,6 +19,10 @@ export class Book extends Document {
 
   @Prop({ default: [] })
   embeddings: number[][]; // To store vector embeddings for RAG
+
+  @Prop({ type: [{ id: String, embedding: [Number], text: String }], default: [] })
+  chunks: { id: string; embedding: number[]; text: string }[];
 }
+
 
 export const BookSchema = SchemaFactory.createForClass(Book);

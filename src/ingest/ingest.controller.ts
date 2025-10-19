@@ -6,7 +6,7 @@ export class IngestController {
   constructor(private readonly ingestService: IngestService) {}
 
  @Post('test-pdf')
-  async testPDF(@Body() body: { filePath?: string; fileUrl?: string }) {
+  async testPDF(@Body() body: { filePath?: string; fileUrl?: string; bookId: string }) {
     return this.ingestService.processPDF(body);
   }
 }

@@ -10,9 +10,10 @@ import { BooksModule } from './modules/books/books.module';
 
 import { UploadModule } from './upload/upload.module';
 import { IngestModule } from './ingest/ingest.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
-  imports: [DatabaseModule, UsersModule, LessonsModule, ProgressModule, MongooseModule.forRoot('mongodb://localhost:27017/adaptive'), AuthModule, BooksModule, UploadModule, IngestModule],
+  imports: [DatabaseModule, UsersModule, LessonsModule, ProgressModule, MongooseModule.forRoot('mongodb://localhost:27017/adaptive'), AuthModule, BooksModule, UploadModule, IngestModule, ChatModule],
  
   
 
